@@ -6,7 +6,7 @@ before_script:
   - sudo apt-get install libopencv-dev
   - mkdir itlPlace-build
   - cd ./itlPlace-build
-  - cmake -DPETSC_DIR=../itlPlace/3rdparty/PETSc/ -DPETSC_ARCH=ubuntu-64 -DTAO_DIR=../itlPlace/3rdparty/TAO ../itlPlace/
-script: make -j5
+  - cmake -GNinja -DPETSC_DIR=../itlPlace/3rdparty/PETSc/ -DPETSC_ARCH=ubuntu-64 -DTAO_DIR=../itlPlace/3rdparty/TAO ../itlPlace/
+script: ninja -j5
 notifications:
   email: false
