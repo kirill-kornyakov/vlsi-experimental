@@ -77,14 +77,12 @@ def CompareValues(value1, value2, eps=0.01):
     return NumberComparisonResult.NOT_EQUAL
 
 
-def ReportErrorAndExit(error, logger, emailer):
+def ReportErrorAndExit(error, logger):
     logger.Log(error)
-    emailer.SendMessageAndExit(error)
 
 
 def MarkResultAsBest(col):
     return "* " + col
-
 
 def WriteStringToFile2(cols, tableFileName):
     printStr = ""

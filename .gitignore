@@ -4,11 +4,12 @@
 .idea
 
 itlPlace-build
-itlPlace/cfg/Replicated_*
+itlPlace-xcode
 
 Benchmarks/IWLS_GP_r1511
 Benchmarks/IWLS05
 Benchmarks/ISPD04
 
+itlPlace/cfg/Replicated_*
 CurrentLogs
 TFLogs

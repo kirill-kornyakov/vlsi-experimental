@@ -2,7 +2,6 @@ import subprocess
 
 from BaseExperiment import *
 from ReportCreator import ReportCreator
-from Logger import Logger
 from CoreFunctions import ReportErrorAndExit
 
 
@@ -12,15 +11,13 @@ MAX_TERMINATED_BENCHMARKS_NUM = 3
 
 class ExperimentLauncher:
     logger = None
-    mailer = None
     experiment = None
     resultsStorage = None
     experimentResults = None
     nTerminatedBenchmarks = 0
 
-    def __init__(self, experiment, resultsStorage, mailer):
-        self.logger = Logger()
-        self.mailer = mailer
+    def __init__(self, experiment, resultsStorage, logger):
+        self.logger = logger
         self.experiment = experiment
         self.resultsStorage = resultsStorage
         self.experimentResults = ExperimentResults()
@@ -77,6 +74,9 @@ class ExperimentLauncher:
 
             error = "Error: benchmarks %s were not found!" % notFoundBenchmarksStr
             # self.AddErrorToResults(error)
+
+        if benchmarks == []:
+            return None
 
         return benchmarks
 
@@ -141,7 +141,7 @@ class ExperimentLauncher:
         #HACK: ugly hack for ISPD04 benchmarks
         if self.experiment.cfg.find("ispd04") != -1:
             lefFile = r"%s.lef" % benchmark
-            lefFile = os.path.join(benchMarkFolder, lefFile)
+            lefFile = os.path.join(benchmarkFolder, lefFile)
             lefFileParam = "--params.lef=%s" % lefFile
             placerParameters.append(lefFileParam)
 
@@ -164,7 +164,7 @@ class ExperimentLauncher:
         except Exception, e:
             error = "Error: can not call %s \n" % (placerParameters[0])
             error = error + "Exception message: " + str(e)
-            ReportErrorAndExit(error, self.logger, self.mailer)
+            ReportErrorAndExit(error, self.logger)
 
         #FIXME: here we wait for placer to finish, but we need a cross-platform way to do this
         p.wait()
@@ -195,6 +195,17 @@ class ExperimentLauncher:
         return placerReturnCode
 
     def SaveResults(self, placerReturnCode, logFileName, benchmark, reportTable):
+        reference_values = self.experiment.read_reference_values(logFileName)
+        self.experimentResults.AddReferencePFSTForBenchmark(benchmark, reference_values)
+
+        (result, pfst_values) = self.experiment.ParseLogAndFillTable(logFileName, benchmark, reportTable, reference_values)
+
+        self.experimentResults.AddPFSTForBenchmark(benchmark, pfst_values)
+        self.experimentResults.AddBenchmarkResult(benchmark, result)
+
+        if result == ComparisonResult.CHANGED:
+            self.experimentResults.resultFile = reportTable
+
         if placerReturnCode != 0:
             self.logger.Log("Process return code: %s" % placerReturnCode)
             return
@@ -203,15 +214,6 @@ class ExperimentLauncher:
             self.nTerminatedBenchmarks += 1
             self.experimentResults.AddBenchmarkResult(benchmark, TERMINATED)
             return
-
-        (result, pfst_values, pfst_reference_values) = self.experiment.ParseLogAndFillTable(logFileName, benchmark, reportTable)
-
-        self.experimentResults.AddReferencePFSTForBenchmark(benchmark, pfst_reference_values)
-        self.experimentResults.AddPFSTForBenchmark(benchmark, pfst_values)
-        self.experimentResults.AddBenchmarkResult(benchmark, result)
-
-        if result == ComparisonResult.CHANGED:
-            self.experimentResults.resultFile = reportTable
 
     def RunExperimentOnBenchmark(self, benchmark, logFolder, reportTable, generalParameters):
         placerParameters, logFileName = self.PreparePlacerParameters(benchmark, logFolder, generalParameters)

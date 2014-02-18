@@ -182,7 +182,7 @@ void GetNewCommandLine(string& newCMD, const string& nwtsFileName, int argc, cha
 
 void ComputeAndExportWeights(HDesign& hd)
 {
-  string nwtsFileName = Aux::CreateCoolFileName("Net weights\\", hd.Circuit.Name(), "nwts");
+  string nwtsFileName = Aux::CreateCoolFileName("NetWeights/", hd.Circuit.Name(), "nwts");
   ComputeNetWeights(hd);
   ExportNetWeights(hd, nwtsFileName.c_str());
 }
@@ -200,9 +200,9 @@ void PrepareNextNetWeightingLoop(HDesign& hd, int& nCyclesCounter)
 
   ALERT("Current iteration of net weighting is %d", nCyclesCounter);
 
-  //nwtsFileName = Aux::CreateCoolFileName("Net weights\\", hd.Circuit.Name(), "nwts");
+  nwtsFileName = Aux::CreateCoolFileName("NetWeights/", hd.Circuit.Name(), "nwts");
   defFileName  = hd.Circuit.Name() + "_" + Aux::IntToString(nCyclesCounter) + ".def";
-  //ExportDEF(hd, defFileName);
+  ExportDEF(hd, defFileName);
   ComputeAndExportWeights(hd);
   ReportTNSWNSSequence(hd, tnsStr, wnsStr);
 

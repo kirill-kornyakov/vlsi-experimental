@@ -1,14 +1,13 @@
-from CoreScripts.TestRunner import TestRunner
 from CoreScripts.CoreFunctions import WriteStringToFile
 from CoreScripts.BaseExperiment import BaseExperiment
 
 
 class Experiment_LR(BaseExperiment):
-    def __init__(self):
+    def __init__(self, logger):
         _metrics = ["HPWL", "TWL", "TNS", "WNS"]
         _stages = ["INIT", "LEG"]
         BaseExperiment.__init__(self, "LR experiment IWLS05GP", "LR.cfg", r"IWLS_GP_r1511\IWLS_GP.list", _metrics,
-                                _stages)
+                                _stages, logger)
 
         self.doParsePQAT = True
 
@@ -44,16 +43,3 @@ class Experiment_LR(BaseExperiment):
                 cols.append(printStr)
 
         WriteStringToFile(cols, reportTable)
-
-
-def TestRun():
-    e = Experiment_LR()
-    e.SetBenchmarksList("IWLS_GP_r1511_fast.list")
-
-    testRunner = TestRunner()
-    testRunner.Append(e)
-    testRunner.Run()
-
-
-if __name__ == "__main__":
-    TestRun()

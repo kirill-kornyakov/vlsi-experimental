@@ -1,9 +1,8 @@
 import os
-from CoreScripts.CfgParserFactory import CfgParserFactory
 
+from CoreScripts.CfgParserFactory import CfgParserFactory
 from ParametersParsing import GeneralParameters
 from LogParser import LogParser, TableType
-from Logger import Logger
 from CoreFunctions import CreateConfigParser, WriteStringToFile, MakeTableInPercents, PrintTableToFile
 
 
@@ -75,7 +74,7 @@ class BaseExperiment:
     cfgParser = CreateConfigParser()
     generalParameters = GeneralParameters(cfgParser)
 
-    def __init__(self, name, cfg, benchmarks, metrics, stages, cmdArgs=None):
+    def __init__(self, name, cfg, benchmarks, metrics, stages, logger, cmdArgs=None):
         if not cmdArgs: cmdArgs = []
         self.name = name
         self.cfg = os.path.join(self.generalParameters.binDir, "cfg", cfg)
@@ -83,6 +82,7 @@ class BaseExperiment:
         self.cmdArgs = cmdArgs
         self.metrics = metrics
         self.stages = stages
+        self.logger = logger
 
     def CopyingConstructor(self, be):
         self.cfg = be.cfg
@@ -92,6 +92,7 @@ class BaseExperiment:
         self.cmdArgs = be.cmdArgs
         self.benchmarks = be.benchmarks
         self.doParsePQAT = be.doParsePQAT
+        self.logger = be.logger
 
     def SetConfig(self, cfg):
         self.cfg = os.path.join(self.generalParameters.binDir, "cfg", cfg)
@@ -138,8 +139,8 @@ class BaseExperiment:
 
     def MakeResultTable(self, logFolder, reportTable):
         if os.path.exists(logFolder) == False:
-            logger = Logger()
-            logger.Log("Error: folder %s does not exist" % logFolder)
+            # logger = Logger()
+            self.logger.Log("Error: folder %s does not exist" % logFolder)
             return
 
         reportTable = os.path.join(logFolder, reportTable)

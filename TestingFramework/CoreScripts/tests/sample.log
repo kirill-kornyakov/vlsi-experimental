@@ -1,0 +1,185 @@
+Running itlPlace [http://svn.software.unn.ru/VLSI/CODE/trunk/itlPlace] Revision 1562 (2010/04/20 03:03:57)
+Cfg option changed: params.def = c:\Kornyakov\trunk\Benchmarks/IWLS05/s298.def
+[     0.292] LEF file GSCLib_3.0.lef parsing started...
+[     0.300] LEF parsing finished.
+[     0.300] Lib file GSCLib_3.0.lib parsing started...
+[     0.329] Extracting data from library gsclib
+[     0.345] Lib parsing finished.
+[     0.355] DEF file c:\Kornyakov\trunk\Benchmarks/IWLS05/s298.def parsing started...
+[     0.361] 	Cells parsing started...
+[     0.361] 	Cells parsing finished.
+[     0.361] 	Pins parsing started...
+[     0.362] 	Pins parsing finished.
+[     0.362] 	Nets parsing started...
+[     0.363] ERROR PRINT in netCB (..\src\Parser\DEFparse.cpp:318)
+             Net tie1 has no source.
+[     0.363] ASSERT in Utils::GetDriverWorstPhisics (..\src\Data\Utils\TimingUtils.cpp:47)
+             (design.Get<HPinType::Direction, PinDirection>(driver) == PinDirection_OUTPUT)
+[     0.363] 	Nets parsing finished.
+[     0.363] DEF parsing finished.
+[     0.363] WARNING PRINT in libconfig::ConfigExt::ValueOf (c:\Kornyakov\trunk\itlPlace\include\config\Configuration.h:124)
+             Value for [params.techname] is not found
+[     0.365] NETS SKIPPING STARTED...
+[     0.365] 	Net "blif_clk_net" skipped
+[     0.365] 	Net "n_127" skipped
+[     0.365] 	Net "tie1" skipped
+[     0.365] 	skipped 3 nets
+[     0.365] NETS SKIPPING FINISHED...
+
+Reporting: benchmark statistics
+  Nets count	= 147
+  Cells count	= 141
+  Pins count	= 735
+
+Reporting: placement area report
+  Min placement x: 100.000000
+  Min placement y: 1420.000000
+  Max placement x: 97780.000000
+  Max placement y: 96460.000000
+  Placement area width:  97680.000000
+  Placement area height: 95040.000000
+  Placement region area: 9283507200.000000 nm^2
+  Cells area:            5901508800.000000 nm^2
+  Utilization:           63.5698%
+
+Reporting: Number of cells for each known macro function
+  CLKBUF................7
+  REFF..................14
+  AND...................10
+  AOI...................8
+  OAI...................2
+  NAND..................36
+  NOR...................24
+  OR....................4
+  XOR...................2
+  INV...................34
+
+[     3.372] INITIAL STATE
+
+[     3.372] Running STA:
+[     3.372] Reporting: circuit negative slacks
+[     3.372]   TNS: 8.368235
+[     3.372]   WNS: 0.633614
+
+[     3.372] Critical paths printing started...
+================================================================================
+
+Path #1    From    G12_reg Q    To    G19_reg D
+          Delay[ps] Cap  Fan-                                  
+AAT  RAT  Gate  RC  (fF) out  Info                             
+---- ---- ----- --- ---- ---- -----------------                
+ 118 -516   118   0   14    1 DFFSRX1%CK->Q     G12_reg - G12  
+ 153 -480    35   0   22    3 INVX2%A->Y        g841    - n_414
+ 225 -409    72   0   28    3 CLKBUFX3%A->Y     g824    - n_396
+ 289 -345    64   0   13    1 CLKBUFX1%A->Y     g761    - n_299
+ 373 -260    85   0   53    7 INVX2%A->Y        g760    - n_300
+ 397 -236    24   0    6    1 NAND3X1%A->Y      g728    - n_255
+ 467 -167    70   0    6    1 AND2X1%B->Y       g24     - n_256
+ 494 -139    28   0    8    1 NAND2X1%B->Y      g23     - n_345
+ 533 -101    38   0   13    1 NAND3X1%A->Y      g22     - n_193
+ 566  -68    33   0   20    1 INVX2%A->Y        g529    - n_126
+             68               (setup) DFFSRX1%D G19_reg        
+---- ---- -----               -----------------                
+-634                          (slack)                          
+
+
+
+[     3.373] Reported 1 paths of 37
+[     3.373] Critical paths printing finished!
+
+[     3.712] Running STA:
+[     3.713] Reporting: circuit negative slacks
+[     3.713]   TNS: 8.368235
+[     3.713]   WNS: 0.633614
+
+[     3.713] Critical paths printing started...
+================================================================================
+
+Path #1    From    G12_reg Q    To    G19_reg D
+          Delay[ps] Cap  Fan-                                  
+AAT  RAT  Gate  RC  (fF) out  Info                             
+---- ---- ----- --- ---- ---- -----------------                
+ 118 -516   118   0   14    1 DFFSRX1%CK->Q     G12_reg - G12  
+ 153 -480    35   0   22    3 INVX2%A->Y        g841    - n_414
+ 225 -409    72   0   28    3 CLKBUFX3%A->Y     g824    - n_396
+ 289 -345    64   0   13    1 CLKBUFX1%A->Y     g761    - n_299
+ 373 -260    85   0   53    7 INVX2%A->Y        g760    - n_300
+ 397 -236    24   0    6    1 NAND3X1%A->Y      g728    - n_255
+ 467 -167    70   0    6    1 AND2X1%B->Y       g24     - n_256
+ 494 -139    28   0    8    1 NAND2X1%B->Y      g23     - n_345
+ 533 -101    38   0   13    1 NAND3X1%A->Y      g22     - n_193
+ 566  -68    33   0   20    1 INVX2%A->Y        g529    - n_126
+             68               (setup) DFFSRX1%D G19_reg        
+---- ---- -----               -----------------                
+-634                          (slack)                          
+
+
+
+[     3.714] Reported 1 paths of 37
+[     3.714] Critical paths printing finished!
+[     3.714] Reporting: circuit negative slacks
+[     3.714]   TNS: 8.368235
+[     3.714]   WNS: 0.633614
+[     3.714] TWLbb=1132157.500000
+[     3.720] TWLab=710548.000000
+[     3.720] Inserted 13 buffers
+[     3.720] Reporting: circuit negative slacks
+[     3.720]   TNS: 8.475730
+[     3.720]   WNS: 0.626933
+[     3.721] Reporting: circuit negative slacks
+[     3.721]   TNS: 8.475730
+[     3.721]   WNS: 0.626933
+[     4.043] weight multiplier: 1.000000
+
+[     4.043] STA after legalization:
+[     4.043] Reporting: circuit negative slacks
+[     4.043]   TNS: 11.925776
+[     4.043]   WNS: 0.949529
+
+[     4.374] Running STA:
+[     4.374] Reporting: circuit negative slacks
+[     4.374]   TNS: 11.925776
+[     4.375]   WNS: 0.949529
+
+[     4.375] Critical paths printing started...
+================================================================================
+
+Path #1    From    G11_reg Q    To    G19_reg D
+          Delay[ps] Cap  Fan-                                        
+AAT  RAT  Gate  RC  (fF) out  Info                                   
+---- ---- ----- --- ---- ---- -----------------                      
+ 157 -792   157   1   40    2 DFFSRX1%CK->Q     G11_reg - G11        
+ 307 -642   148   2   93    7 INVX2%A->Y        g805    - g805_net   
+ 376 -574    68   1   43    2 BUF_ITL%A->Y      buf_143 - buf_143_net
+ 456 -494    80   0   31    2 NAND2X1%B->Y      g823    - n_394      
+ 535 -415    79   0   25    1 NOR2X1%A->Y       g822    - n_399      
+ 618 -332    82   1   28    1 NOR2X1%B->Y       g726    - n_254      
+ 715 -235    97   0   25    1 AND2X1%A->Y       g24     - n_256      
+ 750 -199    35   0   12    1 NAND2X1%B->Y      g23     - n_345      
+ 837 -113    86   1   33    1 NAND3X1%A->Y      g22     - n_193      
+ 882  -68    45   0   28    1 INVX2%A->Y        g529    - n_126      
+             68               (setup) DFFSRX1%D G19_reg              
+---- ---- -----               -----------------                      
+-950                          (slack)                                
+
+
+
+[     4.375] Reported 1 paths of 37
+[     4.375] Critical paths printing finished!
+
+[     4.693] DEF is written to .\ExportDEF\2010-04-24_13-15-50_s298.def
+
+Placement Flow Stages Table
+StageName    Tag  Time(sec) Cells HPWL(nm)  TWL(nm) TNS(ns) WNS(ns)
+-------------------------------------------------------------------
+InitialState INIT     3,373   141  1132158  1132158  8,3682  0,6336
+Buffering    BUF      3,721   154  1132158  1132158  8,4757  0,6269
+Legalization LEGB     4,043   154 11815340 12011690 11,9258  0,9495
+
+[     4.693] Thats All!
+[     4.709] FATAL ERROR PRINT in main (..\src\main.cpp:107)
+             Configuration exception!
+FileIOException
+
+Fatal error occured.
+Application has to be terminated.

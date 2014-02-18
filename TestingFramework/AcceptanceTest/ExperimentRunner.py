@@ -19,19 +19,19 @@ class ExperimentRunner:
         benchmark_list = os.path.join(CfgParserFactory.get_root_dir(),
                                       self.cfgParser.get("GeneralParameters", "benchmarkLists"), benchmark_list)
         benchmarks = ExperimentLauncher.PrepareBenchmarks(benchmark_list)
+        
         return benchmarks
 
-    def run_experiment(self, experiment, benchmark, referenceLogFolder):
-        checked_HDP = Checker(experiment, self.referenceLogs + referenceLogFolder)
-        experiment = checked_HDP
+    def run_experiment(self, logger, experiment, benchmark, referenceLogFolder):
+        checker = Checker(experiment, self.referenceLogs + referenceLogFolder)
+        experiment = checker
 
         generalParameters = GeneralParameters(self.cfgParser)
         reportParameters = ReportParameters(self.cfgParser)
 
         storage = ResultsStorage()
-        launcher = ExperimentLauncher(checked_HDP, storage, None)
+        launcher = ExperimentLauncher(checker, storage, logger)
 
-        logger = Logger()
         logger.LogD("Config: %s" % experiment.cfg)
         logger.LogD("Benchmarks: %s" % experiment.benchmarks)
 
@@ -43,7 +43,5 @@ class ExperimentRunner:
 
         launcher.RunExperimentOnBenchmark(benchmark, logFolder, reportTable, generalParameters)
         logger.LogD("Experiment is finished: %s\n" % benchmark)
-
-        # result = launcher.experimentResults.benchmarkResults.get(benchmark)
 
         return launcher.experimentResults

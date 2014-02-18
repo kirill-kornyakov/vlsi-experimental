@@ -83,7 +83,7 @@ class LogParser:
             table.append([])
 
             for col in range(len(metrics)):
-                value = str(self.GetFromTable(str(currStage), metrics[col], TableType.PQAT))
+                value = str(self.GetFromTable(str(currStage), metrics[col]))
                 value = float(value.replace(",", "."))
 
                 if value == NOT_FOUND:

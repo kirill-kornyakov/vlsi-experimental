@@ -3,12 +3,12 @@ from CoreScripts.BaseExperiment import BaseExperiment
 
 #Sensitivity Guided Net Weighting experiment
 class Experiment_Weighting(BaseExperiment):
-    def __init__(self):
+    def __init__(self, logger):
         _metrics = ["HPWL", "TNS", "WNS"]
         _stages = ["INIT", "LEG"]
         BaseExperiment.__init__(self, "Weighting (SGNW) experiment",
                                 "Sensitivity_guided_weighting.cfg", "IWLS05.list",
-                                _metrics, _stages)
+                                _metrics, _stages, logger)
 
         self.doParsePQAT = True
 

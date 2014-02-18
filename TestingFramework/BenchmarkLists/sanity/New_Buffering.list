@@ -1,7 +1,8 @@
 IWLS_GP_r1511/IWLS_GP_000141_s298
-#IWLS_GP_r1511/IWLS_GP_001267_pci_spoci_ctrl
+#IWLS_GP_r1511/IWLS_GP_001267_pci_spoci_ctrl -- results differ on Linux
+IWLS_GP_r1511/IWLS_GP_007161_tv80
 
-#IWLS_GP_r1511/IWLS_GP_007161_tv80 -- it actually passes, but slow
+## Pass, but slow
 #IWLS_GP_r1511/IWLS_GP_037117_b17
 #IWLS_GP_r1511/IWLS_GP_092048_b18
 #IWLS_GP_r1511/IWLS_GP_018718_b21

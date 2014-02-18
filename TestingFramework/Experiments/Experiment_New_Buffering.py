@@ -3,17 +3,15 @@ from CoreScripts.BaseExperiment import BaseExperiment
 
 
 class Experiment_New_Buffering(BaseExperiment):
-    def __init__(self):
+    def __init__(self, logger):
         _metrics = ['Cells', 'HPWL', 'TWL', 'TNS', 'WNS']
         _stages = ['INIT', 'NBUF', 'LEGB']
 
         BaseExperiment.__init__(self, 'IWLS05 new_buffering experiment (NBL)', 'NewBuffering.cfg', 'IWLS05.list',
-                                _metrics, _stages)
+                                _metrics, _stages, logger)
 
 
 def TestRun():
-    #e.MakeResultTable('buf', '111')
-
     metrics = ['Time', 'Cells', 'HPWL', 'TWL', 'TNS', 'WNS']
     stages = ['INIT', 'NBUF', 'LEGB']
 
@@ -40,16 +38,5 @@ def TestRun():
                     testRunner.AddExperimentToGroup(e)
     testRunner.Run()
 
-
-def New_Buffering():
-    #benchmarkList = 'new_buf_IWLS05_GP.list'
-    exp_New_Buffering = Experiment_New_Buffering()  #'IWLS05 New_Buffering experiment ', 'New_Buffering.cfg', benchmarkList
-
-    testRunner = TestRunner()
-    testRunner.Append(exp_New_Buffering)
-    testRunner.Run()
-
-
 if __name__ == "__main__":
-    #TestRun()
-    New_Buffering()
+    TestRun()
