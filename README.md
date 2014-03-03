@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/kirill-kornyakov/vlsi-experimental.png?label=ready&title=Ready)](https://waffle.io/kirill-kornyakov/vlsi-experimental)
 # VLSI Physical Design Framework
 
 [![Build Status](https://travis-ci.org/kirill-kornyakov/vlsi-experimental.png?branch=master)](https://travis-ci.org/kirill-kornyakov/vlsi-experimental)
