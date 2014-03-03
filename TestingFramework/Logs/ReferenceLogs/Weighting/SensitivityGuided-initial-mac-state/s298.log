@@ -1,0 +1,24 @@
+Placement Flow Stages Table
+StageName       Tag  Time(sec) Cells HPWL(nm) TWL(nm) TNS(ns) WNS(ns)
+---------------------------------------------------------------------
+InitialState    INIT     0.232   141  1132158 1132158  8.3708  0.6336
+GlobalPlacement GP1      3.547   141  2588867 2847705  8.9957  0.6902
+Legalization    LEG1     3.557   141  2809424 3060874  9.0251  0.6903
+GlobalPlacement GP2      6.851   141  2584240 2838399  9.0289  0.6992
+Legalization    LEG2     6.860   141  2861566 3125236  9.1081  0.7027
+GlobalPlacement GP3      9.857   141  2430873 2646492  8.8766  0.6846
+Legalization    LEG3     9.867   141  2960295 3183386  9.0293  0.7040
+GlobalPlacement GP4     13.245   141  2621513 2870645  8.9319  0.6787
+Legalization    LEG4    13.254   141  2866768 3099088  8.9924  0.6849
+GlobalPlacement GP5     13.568   141   962180  987515  8.3245  0.6398
+Legalization    LEG5    13.579   141  7560816 7885206 10.2981  0.8285
+GlobalPlacement GP6     18.357   141  2594531 2830978  9.0072  0.6959
+Legalization    LEG6    18.366   141  2827906 3083998  9.0866  0.6972
+GlobalPlacement GP7     20.661   141  2626895 2879976  8.9260  0.6818
+Legalization    LEG7    20.670   141  2837398 3097768  8.9640  0.6826
+GlobalPlacement GP8     24.016   141  2662462 2897397  8.9425  0.6941
+Legalization    LEG8    24.025   141  2909795 3133876  9.0009  0.7004
+GlobalPlacement GP9     25.822   141  2663786 2903564  8.9283  0.6858
+Legalization    LEG9    25.831   141  2931184 3164164  9.0076  0.6902
+Legalization    LEG     25.849   141  2837398 3097768  8.9640  0.6826
+---------------------------------------------------------------------

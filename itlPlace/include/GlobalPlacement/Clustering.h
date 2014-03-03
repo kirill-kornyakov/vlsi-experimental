@@ -7,23 +7,23 @@
 
 const int OK = 0;
 
-//const int SHIFT_NUMBER_FOR_TERMINALS = 1000000; 
-//const int SHIFT_NUMBER_FOR_PRIMARY_PINS = 2000000;
+const int SHIFT_NUMBER_FOR_TERMINALS = 1000000; 
+const int SHIFT_NUMBER_FOR_PRIMARY_PINS = 2000000;
 
-/*inline bool IsMovableCell(int idx)
+inline bool IsMovableCell(int idx)
 {
     return idx < SHIFT_NUMBER_FOR_TERMINALS;
-}*/
+}
 
-/*inline bool IsTerminal(int idx)
+inline bool IsTerminal(int idx)
 {
     return idx >= SHIFT_NUMBER_FOR_TERMINALS && idx < SHIFT_NUMBER_FOR_PRIMARY_PINS;
-}*/
+}
 
-/*inline bool IsPrimaryPin(int idx)
+inline bool IsPrimaryPin(int idx)
 {
     return idx >= SHIFT_NUMBER_FOR_PRIMARY_PINS;
-}*/
+}
 
 class ClusteringInformation
 {
@@ -32,20 +32,19 @@ public:
     int    mDesiredFinalNumberOfClusters;
     double mClustersAreaTolerance;
     int    mCurrentNumberOfClusters;
-    //std::vector<Cluster> clusters;
+    std::vector<Cluster> clusters;
     std::vector<HPin> primaryPins;     //PP and terminal also indexed as usual cells for LSE calculation
     std::vector<HCell> terminalCells;  //they aren't clustered, but  they has their own cluster index
-    HDesign& design; 
 
     std::list<ClusteringLog> clusteringLog; // информация для перехода между уровнями кластеризации
 
-    //HClusteredNets netList;
-    //std::list<ClusteringNetList0> netLevels;  // список нетлистов на каждом уровне кластеризации
+    NetList netList;
+    std::list<NetList> netLevels;  // ������ ��������� �� ������ ������ �������������
 
-    //std::vector<ConnectionsVector> tableOfAdjacentNets;
-    //pAffinityFunction affinityFunction;
+    std::vector<ConnectionsVector> tableOfAdjacentNets;
+    pAffinityFunction affinityFunction;
 
-    ClusteringInformation(HDesign& hd) : design(hd)
+    ClusteringInformation(HDesign& hd)
     {
         mClusterRatio                 = hd.cfg.ValueOf(".Clustering.clusterRatio", 5);
         mDesiredFinalNumberOfClusters = hd.cfg.ValueOf(".Clustering.desiredFinalNumberOfClusters", 2000);
@@ -59,14 +58,14 @@ public:
 private:
     void SaveClustersToFile(FILE* rf, HDesign& hd);
     void SaveClusteringLogToFile(FILE* rf);
-    void SaveNetListToFile(FILE* rf, HClusteredNets* netList);
+    void SaveNetListToFile(FILE* rf, NetList& netList);
     void SaveNetLevelsToFile(FILE* rf);
     void SaveCurrTableOfAdjacentNetsToFile(FILE* rf);
 
     void LoadClustersFromFile(FILE* rf, HDesign& hd);
     void LoadClusteringLogFromFile(FILE* rf);
-    void LoadNetListFromFile(FILE* rf, HClusteredNets* netList, HDesign& hd);
-    void LoadNetLevelsFromFile(FILE* rf, HDesign& hd);
+    void LoadNetListFromFile(FILE* rf, NetList& netList);
+    void LoadNetLevelsFromFile(FILE* rf);
     void LoadCurrTableOfAdjacentNetsFromFile(FILE* rf);
 };
 
@@ -74,15 +73,15 @@ int Clustering(HDesign& hd, ClusteringInformation& ci);
 
 void UnclusterLevelUp(HDesign& hd, ClusteringInformation& ci, ClusteringLogIterator& iter);
 
-//void CalculateNetListSizes(HClusteredNets* netList, int* netListSizes);
+void CalculateNetListSizes(NetList& netList, int* netListSizes);
 
 bool PredicateMergePairGreater(MergeCandidate elem1, MergeCandidate elem2);
 
-//double Affinity(HDesign& hd, HCluster& firstClusterIdx, HCluster& secondClusterIdx, 
-//                std::vector<Cluster>& clusters, HClusteredNets* netList,
-//                std::vector<ConnectionsVector>& currTableOfAdjacentNets);
+double Affinity(HDesign& hd, const int& firstClusterIdx, const int& secondClusterIdx, 
+                std::vector<Cluster>& clusters, NetList& netList, int* netListSizes,
+                std::vector<ConnectionsVector>& currTableOfAdjacentNets);
 
-int FindBestNeighbour(HDesign& hd, ClusteringInformation& ci, 
+int FindBestNeighbour(HDesign& hd, ClusteringInformation& ci, int* netListSizes, 
                       MergeCandidate& mergeCandidate);
 
 void CreateTableOfAdjacentNets(HDesign& hd, ClusteringInformation& ci);
@@ -91,12 +90,12 @@ void CreateTableOfAdjacentNets(HDesign& hd, ClusteringInformation& ci);
 bool GetNextActiveClusterIdx(ClusteringInformation* ci, int& clusterIdx);
 
 void CalculateScores(HDesign& hd, ClusteringInformation& ci, 
-                     std::list<MergeCandidate>& mergeCandidates);
+                     std::list<MergeCandidate>& mergeCandidates, int*& netListSizes);
 void CalculateScores(HDesign& hd, ClusteringInformation& ci, 
-                     std::vector<MergeCandidate>& clustersData);
+                     std::vector<MergeCandidate>& clustersData, int*& netListSizes);
 
 int CalculateNumberOfActiveClusters(ClusteringInformation& ci);
-void AssignWeightForClusteredNet(HDesign& hd, ClusteringInformation& ci, HClusteredNet netIdx);
+void AssignWeightForClusteredNet(HDesign& hd, ClusteringInformation& ci, int netIdx);
 void WriteWeightsToClusteredNets(HDesign& hd, ClusteringInformation& ci);
 
 #endif

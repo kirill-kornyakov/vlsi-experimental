@@ -1,0 +1,7 @@
+Placement Flow Stages Table
+StageName           Tag  Time(sec) Cells HPWL(nm) TWL(nm) TNS(ns) WNS(ns)
+-------------------------------------------------------------------------
+InitialState        INIT     0.230   123  3230824 3443602 13.4223  0.8317
+Legalization        LEG      0.241   123  3729066 3939276 13.7924  0.8478
+HippocratePlacement HP       1.487   123  3488496 3704710 13.5130  0.8270
+-------------------------------------------------------------------------

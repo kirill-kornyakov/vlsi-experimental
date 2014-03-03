@@ -169,8 +169,8 @@ void UpdateWeights(HDesign& hd, AppCtx& context, PlacementQualityAnalyzer* QA, i
         ComputeAndExportWeights(hd); //do weighting
         //WriteWeightsToClusteredNets(hd, ci);
         //int netIdx = 0;
-        for (HClusteredNets::ClusteredNetsEnumeratorW i = hd.ClustersNetList.GetEnumeratorW(); i.MoveNext(); )
-        //for (int i = 0; i < static_cast<int>(context.ci->netList.size()); i++)
+
+        for (int i = 0; i < static_cast<int>(context.ci->netList.size()); i++)
         {
             AssignWeightForClusteredNet(hd, *(context.ci), i);
         }

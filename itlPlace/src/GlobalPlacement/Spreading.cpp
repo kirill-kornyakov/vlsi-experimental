@@ -36,7 +36,7 @@ void DetermineBordersOfClusterPotential(BinGrid& binGrid, AppCtx* context,
     MoveBinIndexesIntoBorders(context, min_col, min_row, max_col, max_row);
 }
 
-double CalcBellShapedFunction(AppCtx* context, int solutionIdx, 
+double CalcBellShapedFunction(AppCtx* context, int solutionIdx, int clusterIdx, 
                               int colIdx, int rowIdx, PetscScalar* x)
 {
     double potentialRadiusX = context->sprData.potentialRadiusX;
@@ -83,7 +83,7 @@ double CalcBellShapedFunction(AppCtx* context, int solutionIdx,
 }
 
 //REFACTOR: use CalcBellShapedFunc() function
-void CalcBellShapedFuncAndDerivative(AppCtx* context, int solutionIdx, HCluster cluster, 
+void CalcBellShapedFuncAndDerivative(AppCtx* context, int solutionIdx, int clusterIdx, 
                                      int colIdx, int rowIdx,
                                      PetscScalar* solution,
                                      double &gradX, double &gradY)
@@ -145,12 +145,12 @@ void CalcBellShapedFuncAndDerivative(AppCtx* context, int solutionIdx, HCluster 
     if (context->sprData.useUnidirectSpreading)
     {
         if (residual > 0.0)
-            multiplier = 2 * residual * (cluster, *context->hd).PotentialMultiplier();
+            multiplier = 2 * residual * context->ci->clusters[clusterIdx].potentialMultiplier;
         else
             multiplier = 0.0;
     }
     else
-        multiplier = 2 * residual * (cluster, *context->hd).PotentialMultiplier();
+        multiplier = 2 * residual * context->ci->clusters[clusterIdx].potentialMultiplier;
 
     gradX = multiplier * _potX * potY;
     gradY = multiplier * _potY * potX;
@@ -193,20 +193,12 @@ void CalculatePotentials(AppCtx* context, PetscScalar* x)
     // we take every cluster and consider only bins 
     // which are affected by this cluster potential
     int idxInSolutionVector = 0;
-    int clusterIdx = 0;
+    int clusterIdx = -1;
     int min_row, min_col, max_row, max_col; // area affected by cluster potential 
 
-    //while (GetNextActiveClusterIdx(context->ci, clusterIdx))
-    for (HClusters::ClustersNotFakeEnumeratorW cluster = context->hd->Cluster.GetNotFakeEnumeratorW(); cluster.MoveNext();)
+    while (GetNextActiveClusterIdx(context->ci, clusterIdx))
     {
-    /*for (HClusters::ClustersEnumeratorW cluster = context->hd->Cluster.GetEnumeratorW(); cluster.MoveNext(); clusterIdx++)
-    {
-        while (cluster.IsFake())
-        {
-            cluster.MoveNext();
-            clusterIdx++;
-        }*/
-        idxInSolutionVector = cluster.clusterIdx2solutionIdxLUT();
+        idxInSolutionVector = context->clusterIdx2solutionIdxLUT[clusterIdx];
         currClusterTotalPotential = 0.0;
 
         DetermineBordersOfClusterPotential(binGrid, context, min_col, max_col, min_row, max_row, 
@@ -220,7 +212,7 @@ void CalculatePotentials(AppCtx* context, PetscScalar* x)
         {
             for (int colIdx = min_col; colIdx <= max_col; ++colIdx)
             {
-                double bsf = CalcBellShapedFunction(context, idxInSolutionVector, colIdx, rowIdx, x);
+                double bsf = CalcBellShapedFunction(context, idxInSolutionVector, clusterIdx, colIdx, rowIdx, x);
 
                 context->sprData.clusterPotentialOverBins[rowIdx-min_row][colIdx-min_col] = bsf;
                 currClusterTotalPotential += bsf;
@@ -230,11 +222,12 @@ void CalculatePotentials(AppCtx* context, PetscScalar* x)
         // scale the potential
         if (currClusterTotalPotential != 0)
         {
-            cluster.SetPotentialMultiplier(cluster.Area() / currClusterTotalPotential);
+            context->ci->clusters[clusterIdx].potentialMultiplier = 
+                context->ci->clusters[clusterIdx].area / currClusterTotalPotential;
         } 
         else
         {
-            cluster.SetPotentialMultiplier(0);
+            context->ci->clusters[clusterIdx].potentialMultiplier = 0;
         }
 
         // add scaled cluster potential 
@@ -242,9 +235,9 @@ void CalculatePotentials(AppCtx* context, PetscScalar* x)
             for (int j = min_col; j <= max_col; ++j)
             {
                 binGrid.bins[k][j].sumPotential += 
-                    cluster.PotentialMultiplier() * 
+                    context->ci->clusters[clusterIdx].potentialMultiplier * 
                     context->sprData.clusterPotentialOverBins[k-min_row][j-min_col];
-                sum2 += cluster.PotentialMultiplier() * 
+                sum2 += context->ci->clusters[clusterIdx].potentialMultiplier * 
                     context->sprData.clusterPotentialOverBins[k-min_row][j-min_col];
             }
     }
@@ -306,21 +299,11 @@ double SpreadingPenalty(AppCtx* context, PetscScalar* x)
 void AddSpreadingPenaltyGradient(AppCtx* context, PetscScalar* x, PetscScalar* grad)
 {
     int idxInSolutionVector = 0;
-    int clusterIdx = 0;
+    int clusterIdx = -1;
 
-    /*for (HClusters::ClustersEnumeratorW cluster = context->hd->Cluster.GetEnumeratorW(); cluster.MoveNext(); clusterIdx++)
+    while (GetNextActiveClusterIdx(context->ci, clusterIdx))
     {
-        while (cluster.IsFake())
-        {
-            cluster.MoveNext();
-            clusterIdx++;
-        }*/
-    //while (GetNextActiveClusterIdx(context->ci, clusterIdx))
-    //{
-    for (HClusters::ClustersNotFakeEnumeratorW cluster = context->hd->Cluster.GetNotFakeEnumeratorW();
-        cluster.MoveNext();)
-    {
-        idxInSolutionVector = cluster.clusterIdx2solutionIdxLUT();
+        idxInSolutionVector = context->clusterIdx2solutionIdxLUT[clusterIdx];
 
         int min_row, min_col, max_row, max_col; // area affected by cluster potential 
         DetermineBordersOfClusterPotential(context->sprData.binGrid, context, min_col, max_col, min_row, max_row, 
@@ -337,7 +320,7 @@ void AddSpreadingPenaltyGradient(AppCtx* context, PetscScalar* x, PetscScalar* g
             {
                 double gradX;
                 double gradY;
-                CalcBellShapedFuncAndDerivative(context, idxInSolutionVector, cluster, colIdx, rowIdx, x, 
+                CalcBellShapedFuncAndDerivative(context, idxInSolutionVector, clusterIdx, colIdx, rowIdx, x, 
                     /*potX,*/ gradX, /*potY,*/ gradY);
                 gX += gradX;
                 gY += gradY;

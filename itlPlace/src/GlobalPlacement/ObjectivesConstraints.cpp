@@ -119,7 +119,7 @@ void ReportDebugInfo(AppCtx* context, PetscScalar * solution, PetscScalar * grad
     {
         context->hd->Plotter->VisualizeState(context->ci->mCurrentNumberOfClusters, 
             context->sprData.binGrid.nBinRows, context->sprData.binGrid.nBinCols, 
-            context->hd->ClustersNetList.ClusteredNetCount(), 
+            context->ci->netList.size(), 
             (double*)solution, 
             context->criteriaValues.gLSE, context->criteriaValues.gSOD, context->criteriaValues.gLR, context->criteriaValues.gQS, 
             gradient);
@@ -127,7 +127,7 @@ void ReportDebugInfo(AppCtx* context, PetscScalar * solution, PetscScalar * grad
         if (context->useSumOfDelays)
         {
             context->hd->Plotter->ClearHistogram();
-            context->hd->Plotter->PlotKi(context->ci->mCurrentNumberOfClusters, context->hd->ClustersNetList.ClusteredNetCount(), 
+            context->hd->Plotter->PlotKi(context->ci->mCurrentNumberOfClusters, context->ci->netList.size(), 
                 (double*)solution, Color_Violet);
             context->hd->Plotter->RefreshHistogram();
         }

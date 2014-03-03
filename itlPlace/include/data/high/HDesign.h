@@ -17,9 +17,6 @@
 #include "HTimingPoint.h"
 #include "HCriticalPath.h"
 #include "HCriticalPathPoint.h"
-#include "HCluster.h"
-#include "HClusteredNet.h"
-#include "HNetLevel.h"
 
 #include "HPlotter.h"
 #include "OpenCVPlotter.h"
@@ -42,7 +39,6 @@ public: \
   template<int prop> \
   string GetString(col_type::ItemType item) const { return field_name.Get<prop, string>(item); }
 
-class HNetLevels;
 /* Attention!!!
  *  distance units - nm   (nanometers)
  *  capacitance    - pf   (picofarads)
@@ -59,7 +55,7 @@ public:
              Cells(this),          Pins(this),           Nets(this),
              SteinerPoints(this),  Wires(this),          Sites(this),
              PlacementRows(this),  TimingPoints(this),   CriticalPaths(this),
-             CriticalPathPoints(this), Cluster(this), NetLevels(this), ClustersNetList(this)
+             CriticalPathPoints(this)
   {
     _Design.Tech = 0;
     //Plotter = new HPlotter(*this);
@@ -84,9 +80,6 @@ public:
   HDESIGNCOLLECTION(TimingPoints, HTimingPoints)
   HDESIGNCOLLECTION(CriticalPaths, HCriticalPaths)
   HDESIGNCOLLECTION(CriticalPathPoints, HCriticalPathPoints)
-  HDESIGNCOLLECTION(Cluster, HClusters)
-  HDESIGNCOLLECTION(ClustersNetList, HClusteredNets)
-  HDESIGNCOLLECTION(NetLevels, HNetLevels)
 
   void Initialize();
   bool HasTechInfo() const {return _Design.Tech != 0;}

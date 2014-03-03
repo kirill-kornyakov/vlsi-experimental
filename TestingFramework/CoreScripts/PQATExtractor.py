@@ -1,7 +1,6 @@
 import os
 
 from LogParser import LogParser, PQAT
-from ChartPlotter import PlotChartForBenchmark
 from CoreFunctions import PrintTableToFile, MakeTableInPercents, ExtractXYFromTable
 
 
@@ -30,11 +29,6 @@ def ParseAndPlotPQAT(logFolder, doPlotCharts):
             #Start point (percents)
             xValues[0] = 100
             yValues[0] = 100
-
-            #Plot
-            if doPlotCharts:
-                PlotChartForBenchmark(logName, xValues, "TNS", yValues, "HPWL")
-
 
 def Run():
     #logFolder    = r"../Reports/LR_make_charts"

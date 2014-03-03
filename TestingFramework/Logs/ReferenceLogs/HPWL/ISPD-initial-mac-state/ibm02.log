@@ -1,0 +1,8 @@
+Placement Flow Stages Table
+StageName         Tag  Time(sec) Cells HPWL(nm)  TWL(nm)
+--------------------------------------------------------
+InitialState      INIT     0.688 19601  5276410        0
+GlobalPlacement   GP     122.118 19601 36698457 42046431
+Legalization      LEG    122.327 19601 41632780 42046431
+DetailedPlacement DP     251.367 19601 36531790 42601690
+--------------------------------------------------------

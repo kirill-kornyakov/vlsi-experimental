@@ -26,15 +26,15 @@ struct Cluster
 
 struct MergeCandidate
 {
-  HCluster clusterIdx;
-  HCluster bestNeighborIdx;
+  int clusterIdx;
+  int bestNeighborIdx;
   double score;
 
   MergeCandidate()
   {
     score = 0.0;
-    //bestNeighborIdx = HClusters::Null();
-    //clusterIdx = HClusters::Null();
+    bestNeighborIdx = -1;
+    clusterIdx = -1;
   }
 };
 
@@ -44,15 +44,15 @@ struct MergeCandidate
 // РјРѕР¶РЅРѕ РїСЂРµРґСЃС‚Р°РІРёС‚СЊ СЃР»РµРґСѓСЋС‰РµР№ СЃС‚СЂСѓРєС‚СѓСЂРѕР№
 struct MergedCluster
 {
-  HCluster cluster1Idx;
-  HCluster cluster2Idx;
+  int cluster1Idx;
+  int cluster2Idx;
   size_t nCellsInCluster1;
 };
 
 class ClusteredNet
 {
 public:
-  std::vector<HCluster> clusterIdxs;
+  std::vector<int> clusterIdxs;
   
   double weight;
   double k;
@@ -74,13 +74,14 @@ public:
 typedef std::list<MergedCluster> ClusteringLog;
 typedef std::list<ClusteringLog>::reverse_iterator ClusteringLogIterator;
 
-//typedef std::vector<ClusteredNet> ClusteringNetList0;  //РїРµСЂРµС‡РµРЅСЊ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёС… СЃРѕРµРґРёРЅРµРЅРёР№ РјРµР¶РґСѓ РєР»Р°СЃС‚РµСЂР°РјРё
-//typedef std::list<NetList>::reverse_iterator NetListIterator;
+typedef std::vector<ClusteredNet> NetList;  //перечень существующих соединений между кластерами
+typedef std::list<NetList>::reverse_iterator NetListIterator;
 
-typedef std::vector<HClusteredNet> ConnectionsVector;// РїРµСЂРµС‡РµРЅСЊ РёРЅРґРµРєСЃРѕРІ СЃРѕРµРґРёРЅРµРЅРёР№, РІ РєРѕС‚РѕСЂС‹Рµ РІС…РѕРґРёС‚ С‚РµРєСѓС‰РёР№ РєР»Р°СЃС‚РµСЂ
+typedef std::vector<int> ConnectionsVector;// перечень индексов соединений, в которые входит текущий кластер
 
-typedef double (*pAffinityFunction)(HDesign& hd, HCluster& firstClusterIdx, HCluster& secondClusterIdx, 
-                                                   std::vector<Cluster>& clusters, HClusteredNets* netList,
-                                                   std::vector<ConnectionsVector>& currTableOfAdjacentNets);
+typedef double (*pAffinityFunction)(HDesign& hd, 
+                                    const int& firstClusterIdx, const int& secondClusterIdx,
+                                    std::vector<Cluster>& clusters, NetList& netList, int* netListSizes,
+                                    std::vector<ConnectionsVector>& currTableOfAdjacentNets);
 
 #endif

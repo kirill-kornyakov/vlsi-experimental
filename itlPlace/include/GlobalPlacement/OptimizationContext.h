@@ -52,7 +52,7 @@ struct AppCtx
     bool useBorderBounds;
 
     int   nVariables;
-    //int*  netListSizes;  
-    //int*  clusterIdx2solutionIdxLUT;
-    HCluster*  solutionIdx2clusterIdxLUT;
+    int*  netListSizes;  
+    int*  clusterIdx2solutionIdxLUT;
+    int*  solutionIdx2clusterIdxLUT;
 };

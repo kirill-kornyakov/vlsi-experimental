@@ -24,7 +24,7 @@ void GlobalPlacement(HDesign& hd, std::string cfgContext)
     ALERT("ANALYTICAL PLACEMENT STARTED");
 
     ClusteringInformation ci(hd);
-    //ci.affinityFunction = Affinity;
+    ci.affinityFunction = Affinity;
 
     Clustering(hd, ci);
 
@@ -44,14 +44,14 @@ void GlobalPlacement(HDesign& hd, std::string cfgContext)
     Relaxation(hd, ci, 1);
 
     ClusteringLogIterator clusteringLogIterator = ci.clusteringLog.rbegin();
-    std::vector<HClusteredNets*>::reverse_iterator netLevelsIterator = hd.NetLevels.GetNetLelev()->rbegin();
-    if (netLevelsIterator != hd.NetLevels.GetNetLelev()->rend()) 
+    NetListIterator netLevelsIterator = ci.netLevels.rbegin();
+    if (netLevelsIterator != ci.netLevels.rend()) 
         ++netLevelsIterator;
 
     int metaIterationNumber = 2;
     for (; clusteringLogIterator != ci.clusteringLog.rend(); ++clusteringLogIterator, ++netLevelsIterator)
     {
-        hd.ClustersNetList = *(*netLevelsIterator);
+        ci.netList = *netLevelsIterator;
         UnclusterLevelUp(hd, ci, clusteringLogIterator);
         Interpolation(hd, ci);
         Relaxation(hd, ci, metaIterationNumber);
@@ -113,30 +113,22 @@ void AnalyticalGlobalPlacement::PlaceToTheCenterIntially(HDesign& hd, Clustering
     double maxY = hd.Circuit.PlacementMaxY();
     double shufflePercent = hd.cfg.ValueOf(".shufflePercent", 0.0);
 
-    int clusterIdx = 0;
-    /*for (HClusters::ClustersEnumeratorW cluster = ci.design.Cluster.GetEnumeratorW(); cluster.MoveNext(); clusterIdx++)
+    int clusterIdx = -1;
+    while (GetNextActiveClusterIdx(&ci, clusterIdx))
     {
-        while (cluster.IsFake())
-        {
-            cluster.MoveNext();
-            clusterIdx++;
-        }*/
-    for (HClusters::ClustersNotFakeEnumeratorW cluster = ci.design.Cluster.GetNotFakeEnumeratorW(); cluster.MoveNext(); clusterIdx++)
-    {
-        cluster.SetXCoord((minX + maxX) / 2.0);
-        cluster.SetXCoord(cluster.XCoord() + 2.0*((double)rand()/(double)RAND_MAX - 0.5)*
-            shufflePercent/100.0*hd.Circuit.PlacementWidth());
-        cluster.SetYCoord( (minY + maxY) / 2.0);
-        cluster.SetYCoord(cluster.YCoord() + 2.0*((double)rand()/(double)RAND_MAX - 0.5)*
-            shufflePercent/100.0*hd.Circuit.PlacementHeight());
+        ci.clusters[clusterIdx].xCoord = (minX + maxX) / 2.0;
+        ci.clusters[clusterIdx].xCoord += 2.0*((double)rand()/(double)RAND_MAX - 0.5)*
+            shufflePercent/100.0*hd.Circuit.PlacementWidth();
+        ci.clusters[clusterIdx].yCoord = (minY + maxY) / 2.0;
+        ci.clusters[clusterIdx].yCoord += 2.0*((double)rand()/(double)RAND_MAX - 0.5)*
+            shufflePercent/100.0*hd.Circuit.PlacementHeight();
     }
     UpdateCellsCoordinates(hd, ci);
 
-    //int netListSize = static_cast<int>(ci.netList.size());
-    //for (int i = 0; i < netListSize; i++)
-    for (HClusteredNets::ClusteredNetsEnumeratorW i = ci.design.ClustersNetList.GetEnumeratorW(); i.MoveNext(); )
+    int netListSize = static_cast<int>(ci.netList.size());
+    for (int i = 0; i < netListSize; i++)
     {
-        i.Setk(0.0);
+        ci.netList[i].k = 0.0;
     }
 }
 
@@ -154,18 +146,11 @@ void AnalyticalGlobalPlacement::SetClustersCoords(ClusteringInformation& ci, Vec
 {
     PetscScalar* initValues = new PetscScalar[2*ci.mCurrentNumberOfClusters];
     int idx = 0;
-    int clusterIdx = 0;
-    //for (HClusters::ClustersEnumeratorW cluster = ci.design.Cluster.GetEnumeratorW(); cluster.MoveNext(); clusterIdx++)
-    //{
-    //    while (cluster.IsFake())
-    //    {
-    //        cluster.MoveNext();
-    //        clusterIdx++;
-    //    }
-    for (HClusters::ClustersNotFakeEnumeratorW cluster = ci.design.Cluster.GetNotFakeEnumeratorW(); cluster.MoveNext(); clusterIdx++)
+    int clusterIdx = -1;
+    while (GetNextActiveClusterIdx(&ci, clusterIdx))
     {
-        initValues[2*idx+0] = cluster.XCoord();
-        initValues[2*idx+1] = cluster.YCoord();
+        initValues[2*idx+0] = ci.clusters[clusterIdx].xCoord;
+        initValues[2*idx+1] = ci.clusters[clusterIdx].yCoord;
         idx++;
     }
 
@@ -196,15 +181,8 @@ void AnalyticalGlobalPlacement::SetBounds(HDesign& hd, ClusteringInformation& ci
     //TODO: change borders according cluster sizes, we have to calculate width
     //and height of each cluster and shift slightly borders for each cluster
     idx = 0;
-    clusterIdx = 0;
-    //for (HClusters::ClustersEnumeratorW cluster = ci.design.Cluster.GetEnumeratorW(); cluster.MoveNext(); clusterIdx++)
-    //{
-    //    while (cluster.IsFake())
-    //    {
-    //        cluster.MoveNext();
-    //        clusterIdx++;
-    //    }
-    for (HClusters::ClustersNotFakeEnumeratorW cluster = ci.design.Cluster.GetNotFakeEnumeratorW(); cluster.MoveNext(); clusterIdx++)
+    clusterIdx = -1;
+    while (GetNextActiveClusterIdx(&ci, clusterIdx))
     {
         initValues[2*idx+0] = hd.Circuit.PlacementMinX() + xMargin;
         initValues[2*idx+1] = hd.Circuit.PlacementMinY() + yMargin;
@@ -217,15 +195,8 @@ void AnalyticalGlobalPlacement::SetBounds(HDesign& hd, ClusteringInformation& ci
     VecSetValues(xl, context.nVariables, idxs, initValues, INSERT_VALUES);
 
     idx = 0;
-    clusterIdx = 0;
-    /*for (HClusters::ClustersEnumeratorW cluster = ci.design.Cluster.GetEnumeratorW(); cluster.MoveNext(); clusterIdx++)
-    {
-        while (cluster.IsFake())
-        {
-            cluster.MoveNext();
-            clusterIdx++;
-        }*/
-    for (HClusters::ClustersNotFakeEnumeratorW cluster = ci.design.Cluster.GetNotFakeEnumeratorW(); cluster.MoveNext(); clusterIdx++)
+    clusterIdx = -1;
+    while (GetNextActiveClusterIdx(&ci, clusterIdx))
     {
         initValues[2*idx+0] = hd.Circuit.PlacementMaxX() - xMargin;
         initValues[2*idx+1] = hd.Circuit.PlacementMaxY() - yMargin;
@@ -248,18 +219,11 @@ void AnalyticalGlobalPlacement::GetClusterCoordinates(ClusteringInformation& ci,
 
     VecGetValues(x, PetscInt(2*ci.mCurrentNumberOfClusters), idxs, values);
     int idx = 0;
-    int clusterIdx = 0;
-    //for (HClusters::ClustersEnumeratorW cluster = ci.design.Cluster.GetEnumeratorW(); cluster.MoveNext(); clusterIdx++)
-    //{
-    //    while (cluster.IsFake())
-    //    {
-    //        cluster.MoveNext();
-    //        clusterIdx++;
-    //    }
-    for (HClusters::ClustersNotFakeEnumeratorW cluster = ci.design.Cluster.GetNotFakeEnumeratorW(); cluster.MoveNext(); clusterIdx++)
+    int clusterIdx = -1;
+    while (GetNextActiveClusterIdx(&ci, clusterIdx))
     {
-        cluster.SetXCoord(values[2*idx+0]);
-        cluster.SetYCoord(values[2*idx+1]);
+        ci.clusters[clusterIdx].xCoord = values[2*idx+0];
+        ci.clusters[clusterIdx].yCoord = values[2*idx+1];
         idx++;
     }
 
@@ -275,52 +239,35 @@ void AnalyticalGlobalPlacement::GetVariablesValues(ClusteringInformation& ci, Ve
 
 void AnalyticalGlobalPlacement::UpdateCellsCoordinates(HDesign& hd, ClusteringInformation& ci)
 {
-    int clusterIdx = 0;
-    //for (HClusters::ClustersEnumeratorW cluster = ci.design.Cluster.GetEnumeratorW(); cluster.MoveNext(); clusterIdx++)
-    //{
-    //    while (cluster.IsFake())
-    //    {
-    //        cluster.MoveNext();
-    //        clusterIdx++;
-    //    }
-    for (HClusters::ClustersNotFakeEnumeratorW cluster = ci.design.Cluster.GetNotFakeEnumeratorW(); cluster.MoveNext(); clusterIdx++)
+    int clusterIdx = -1;
+    while (GetNextActiveClusterIdx(&ci, clusterIdx))
     {
-        //for (int j = 0; j < static_cast<int>(cluster.Cells()->size()); ++j)
-        for (std::vector<HCell>::iterator cellIter = cluster.Cells()->begin(); cellIter <  cluster.Cells()->end(); cellIter++)
+        for (int j = 0; j < static_cast<int>(ci.clusters[clusterIdx].cells.size()); ++j)
         {
-            HCell cell = *cellIter; //Utils::FindCellByName(hd, ci.clusters[clusterIdx].cells[j]);
-            hd.Set<HCell::X>(cell, cluster.XCoord() - hd.GetDouble<HCell::Width>(cell)/2.0);
-            hd.Set<HCell::Y>(cell, cluster.YCoord() - hd.GetDouble<HCell::Height>(cell)/2.0);
+            HCell cell = ci.clusters[clusterIdx].cells[j]; //Utils::FindCellByName(hd, ci.clusters[clusterIdx].cells[j]);
+            hd.Set<HCell::X>(cell, ci.clusters[clusterIdx].xCoord - hd.GetDouble<HCell::Width>(cell)/2.0);
+            hd.Set<HCell::Y>(cell, ci.clusters[clusterIdx].yCoord - hd.GetDouble<HCell::Height>(cell)/2.0);
         }
     }
 }
 
 void AnalyticalGlobalPlacement::WriteCellsCoordinates2Clusters(HDesign& hd, ClusteringInformation& ci)
 {
-    int clusterIdx = 0;
-    //for (HClusters::ClustersEnumeratorW cluster = ci.design.Cluster.GetEnumeratorW(); cluster.MoveNext(); clusterIdx++)
-    //{
-    //    while (cluster.IsFake())
-    //    {
-    //        cluster.MoveNext();
-    //        clusterIdx++;
-    //    }
-    for (HClusters::ClustersNotFakeEnumeratorW cluster = ci.design.Cluster.GetNotFakeEnumeratorW(); cluster.MoveNext(); clusterIdx++)
+    int clusterIdx = -1;
+    while (GetNextActiveClusterIdx(&ci, clusterIdx))
     {
-        HCell cell = *cluster.Cells()->begin(); //Utils::FindCellByName(hd, ci.clusters[clusterIdx].cells[0]);
-        cluster.SetXCoord(hd.GetDouble<HCell::X>(cell) + hd.GetDouble<HCell::Width>(cell)/2.0);
-        cluster.SetYCoord(hd.GetDouble<HCell::Y>(cell) + hd.GetDouble<HCell::Height>(cell)/2.0);
+        HCell cell = ci.clusters[clusterIdx].cells[0]; //Utils::FindCellByName(hd, ci.clusters[clusterIdx].cells[0]);
+        ci.clusters[clusterIdx].xCoord = hd.GetDouble<HCell::X>(cell) + hd.GetDouble<HCell::Width>(cell)/2.0;
+        ci.clusters[clusterIdx].yCoord = hd.GetDouble<HCell::Y>(cell) + hd.GetDouble<HCell::Height>(cell)/2.0;
     }
 }
 
-void AnalyticalGlobalPlacement::ExportNetWeights(ClusteringInformation &ci, int &i ) 
+void AnalyticalGlobalPlacement::ExportNetWeights( NetList::iterator &netListIter, ClusteringInformation &ci, int &i ) 
 {
-    FILE* resultFile = fopen("Before relax", "a");
-    i = 0;
-    for (HClusteredNets::ClusteredNetsEnumeratorW j = ci.design.ClustersNetList.GetEnumeratorW(); j.MoveNext() && i < 10; ++i)
-    //for (netListIter = ci.netList.begin(), i = 0; netListIter != ci.netList.end() && i < 10; ++netListIter, ++i)
+    FILE* resultFile = fopen("net-weights-before-relax.nwts", "a");
+    for (netListIter = ci.netList.begin(), i = 0; netListIter != ci.netList.end() && i < 10; ++netListIter, ++i)
     {
-        fprintf(resultFile, "%f\n", j.weight());
+        fprintf(resultFile, "%f\n", netListIter->weight);
     }
     fprintf(resultFile, "END\n");
     fclose(resultFile);
@@ -329,41 +276,33 @@ void AnalyticalGlobalPlacement::ExportNetWeights(ClusteringInformation &ci, int 
 int AnalyticalGlobalPlacement::Interpolation(HDesign& hd, ClusteringInformation& ci)
 {
     //TODO: consider terminals during interpolation??
-    vector<MergeCandidate> clustersData(hd.Cluster.ClustersCount());
+    vector<MergeCandidate> clustersData(ci.clusters.size());
     list<MergeCandidate> clustersDataList;
     list<MergeCandidate>::iterator clustersDataIterator;
-    //bool* isCPoint = new bool[hd.Cluster.ClustersCount()];  // C-point is a cluster which location is fixed during interpolation
+    bool* isCPoint = new bool[ci.clusters.size()];  // C-point is a cluster which location is fixed during interpolation
     double part = 0.5;  // part of ci.clusters to be initially fixed during interpolation (part of C-points)
-    HCluster currClusterIdx;
-    HCluster neighborIdx;
-    HClusteredNet netIdx;
-    vector<HCluster> currCPoints;
+    int currClusterIdx;
+    int neighborIdx;
+    int netIdx;
+    vector<int> currCPoints;
     double sumX;
     double sumY;
     double area;
 
-    //int* netListSizes = new int[ci.netList.size()]; //TODO: free this memory
-    //CalculateNetListSizes(ci.netList, netListSizes);
+    int* netListSizes = new int[ci.netList.size()]; //TODO: free this memory
+    CalculateNetListSizes(ci.netList, netListSizes);
 
-    CalculateScores(hd, ci, clustersData);
-    int clusterIdx = 0;
-    //for (HClusters::ClustersEnumeratorW cluster = ci.design.Cluster.GetEnumeratorW(); cluster.MoveNext(); clusterIdx++)
-    //{
-    //    while (cluster.IsFake())
-    //    {
-    //        cluster.MoveNext();
-    //        clusterIdx++;
-    //    }
-    for (HClusters::ClustersNotFakeEnumeratorW cluster = ci.design.Cluster.GetNotFakeEnumeratorW(); cluster.MoveNext(); clusterIdx++)
+    CalculateScores(hd, ci, clustersData, netListSizes);
+    int clusterIdx = -1;
+    while (GetNextActiveClusterIdx(&ci, clusterIdx))
     {
-        cluster.SetisCPoint(false);
-        //isCPoint[clusterIdx] = false;
+        isCPoint[clusterIdx] = false;
     }
 
-    //delete[] netListSizes;
+    delete[] netListSizes;
     sort(clustersData.begin(), clustersData.end(), PredicateMergePairGreater);
 
-    for (int i = 0; i < static_cast<int>(hd.Cluster.ClustersCount()); ++i)
+    for (int i = 0; i < static_cast<int>(ci.clusters.size()); ++i)
     {
         if (clustersData[i].score >= 1.5)
             clustersDataList.push_back(clustersData[i]);
@@ -373,8 +312,7 @@ int AnalyticalGlobalPlacement::Interpolation(HDesign& hd, ClusteringInformation&
     clustersDataIterator = clustersDataList.begin();
     for (int i = 0; i < static_cast<int>(clustersDataList.size() * part); ++i)
     {
-        //isCPoint[::ToID(clustersDataIterator->clusterIdx) - 1] = true;
-        hd[clustersDataIterator->clusterIdx].SetisCPoint(true);
+        isCPoint[clustersDataIterator->clusterIdx] = true;
         ++clustersDataIterator;
     }
 
@@ -382,38 +320,37 @@ int AnalyticalGlobalPlacement::Interpolation(HDesign& hd, ClusteringInformation&
     {
         currClusterIdx = clustersDataIterator->clusterIdx;
         currCPoints.clear();
-        for (int j = 0; j < static_cast<int>(ci.design[currClusterIdx].tableOfAdjacentNets()->size()); ++j)
+        for (int j = 0; j < static_cast<int>(ci.tableOfAdjacentNets[currClusterIdx].size()); ++j)
         {
-            netIdx = (*ci.design[currClusterIdx].tableOfAdjacentNets())[j];
-            for (int k = 0; k < static_cast<int>(ci.design[netIdx].clusterIdxs()->size()); ++k)
+            netIdx = ci.tableOfAdjacentNets[currClusterIdx][j];
+            for (int k = 0; k < static_cast<int>(ci.netList[netIdx].clusterIdxs.size()); ++k)
             {
-                neighborIdx = (*ci.design[netIdx].clusterIdxs())[k];
+                neighborIdx = ci.netList[netIdx].clusterIdxs[k];
                 //TODO: probably better to consider terminals (primary pins) also
-                if (ci.design[neighborIdx].IsTerminals() || ci.design[neighborIdx].IsPrimary() || (ci.design[neighborIdx].isCPoint() == false))
+                if (!IsMovableCell(neighborIdx) || isCPoint[neighborIdx] == false)
                     continue;
                 // remember all placed (fixed) neighbors of current cluster
                 currCPoints.push_back(neighborIdx);
             }
         }
-        hd[currClusterIdx].SetisCPoint(true);
-        //isCPoint[::ToID(currClusterIdx) - 1] = true;
+        isCPoint[currClusterIdx] = true;
         if (currCPoints.size() == 0)
             continue;
         sumX = sumY = area = 0.0;
         for (int j = 0; j < static_cast<int>(currCPoints.size()); ++j)
         {
-            sumX += ci.design[currCPoints[j]].Area() * ci.design[currCPoints[j]].XCoord();
-            sumY += ci.design[currCPoints[j]].Area() * ci.design[currCPoints[j]].YCoord();
-            area += ci.design[currCPoints[j]].Area();
+            sumX += ci.clusters[currCPoints[j]].area * ci.clusters[currCPoints[j]].xCoord;
+            sumY += ci.clusters[currCPoints[j]].area * ci.clusters[currCPoints[j]].yCoord;
+            area += ci.clusters[currCPoints[j]].area;
         }
-        ci.design[currClusterIdx].SetXCoord(sumX / area);
-        ci.design[currClusterIdx].SetYCoord(sumY / area);
+        ci.clusters[currClusterIdx].xCoord = sumX / area;
+        ci.clusters[currClusterIdx].yCoord = sumY / area;
         ++clustersDataIterator;
     }
 
     UpdateCellsCoordinates(hd, ci);
 
-    //delete[] isCPoint;
+    delete[] isCPoint;
 
     return OK;
 }
@@ -478,6 +415,7 @@ int AnalyticalGlobalPlacement::Relaxation(HDesign& hd, ClusteringInformation& ci
     TAO_SOLVER      tao;        // TAO_SOLVER solver context
     TAO_APPLICATION taoapp;     // TAO application context
 
+    NetList::iterator netListIter;
     int i;
 
     //INITIALIZE OPTIMIZATION PROBLEM PARAMETERS
@@ -486,7 +424,7 @@ int AnalyticalGlobalPlacement::Relaxation(HDesign& hd, ClusteringInformation& ci
 
     ReportIterationInfo(ci, context);
     ReportBinGridInfo(context);   
-    ExportNetWeights(ci, i);
+    ExportNetWeights(netListIter, ci, i);
 
     //SOLVE THE PROBLEM
     iCHKERRQ Solve(hd, ci, context, taoapp, tao, x, metaIteration);

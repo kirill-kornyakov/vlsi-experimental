@@ -59,8 +59,11 @@ TARGET_LINK_LIBRARIES(${app} ${OpenCV_LIBS} ${TAO_LIBRARIES} ${PETSC_LIBRARIES})
 
 add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ln -sf ../../itlPlace/cfg "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/cfg"
-    COMMAND ln -sf ../../itlPlace/technology "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/technology"
+    COMMAND ln -fns "${CMAKE_SOURCE_DIR}/cfg" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/cfg"
+    COMMAND ln -fns "${CMAKE_SOURCE_DIR}/technology" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/technology"
+    COMMAND mkdir -p "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ClusteringInformation"
+    COMMAND mkdir -p "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/NetWeights"
+    COMMAND mkdir -p "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ExportDEF"
 )
 
 # Debugging CMake

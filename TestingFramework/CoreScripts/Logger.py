@@ -4,6 +4,7 @@ import os
 from CoreFunctions import GetTimeStamp
 from CfgParserFactory import CfgParserFactory
 
+
 class LoggingLevel:
     DEBUG = 0
     RELEASE = 1

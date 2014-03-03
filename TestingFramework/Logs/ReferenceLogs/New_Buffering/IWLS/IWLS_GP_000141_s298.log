@@ -1,7 +1,0 @@
-Placement Flow Stages Table
-StageName       Tag  Time(sec) Cells HPWL(nm) TWL(nm) TNS(ns) WNS(ns)
----------------------------------------------------------------------
-InitialState    INIT     0.228   141  3004612 3298812  9.1745  0.7041
-New_Buffering   NBUF     1.040   156  2592498 2723877  8.8205  0.6699
-Legalization    LEGB     1.053   156  3270626 3431666  9.0719  0.6967
----------------------------------------------------------------------

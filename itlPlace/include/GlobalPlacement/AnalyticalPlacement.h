@@ -6,7 +6,7 @@
 
 namespace AnalyticalGlobalPlacement
 {
-  void InitializeDataStructures(std::vector<Cluster>& clusters, HClusteredNets* netList);  
+  void InitializeDataStructures(std::vector<Cluster>& clusters, NetList& netList);  
   int InitializeTAO(HDesign& hd, ClusteringInformation& ci, AppCtx &context, 
     Vec& x, Vec& xl, Vec& xu, 
     TAO_SOLVER& tao, TAO_APPLICATION& taoapp);
@@ -16,7 +16,7 @@ namespace AnalyticalGlobalPlacement
   int Solve(HDesign& hd, ClusteringInformation& ci, AppCtx& context, TAO_APPLICATION taoapp, 
     TAO_SOLVER tao, Vec x, int metaIteration);
 
-  void ExportNetWeights(ClusteringInformation &ci, int &i ); 
+  void ExportNetWeights( NetList::iterator &netListIter, ClusteringInformation &ci, int &i ); 
 
   void SetVariablesValues(ClusteringInformation& ci, Vec& x);
   void GetVariablesValues(ClusteringInformation& ci, Vec x);

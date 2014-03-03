@@ -5,50 +5,48 @@ extern timetype expTime;
 extern timetype lseTime;
 extern timetype lseGradTime;
 
-int GetPrecalcedExponentsIdx(AppCtx* context, HCluster clusterIdx)
+int GetPrecalcedExponentsIdx(AppCtx* context, int clusterIdx)
 {
-    HClusterWrapper cw = (*context->hd)[clusterIdx];
-  if (!cw.IsTerminals() && !cw.IsPrimary())
+  if (IsMovableCell(clusterIdx))
   {
-      return cw.clusterIdx2solutionIdxLUT();
+    return context->clusterIdx2solutionIdxLUT[clusterIdx];
   }
-  else if (cw.IsTerminals())
+  else if (IsTerminal(clusterIdx))
   {
-    return context->ci->mCurrentNumberOfClusters + (*context->hd)[clusterIdx].id();
+    return clusterIdx - SHIFT_NUMBER_FOR_TERMINALS + context->ci->mCurrentNumberOfClusters;
   }
   else
   {
-    return context->ci->mCurrentNumberOfClusters + (*context->hd)[clusterIdx].id() + context->ci->terminalCells.size();
+    return clusterIdx - SHIFT_NUMBER_FOR_PRIMARY_PINS + context->ci->mCurrentNumberOfClusters
+      + context->ci->terminalCells.size();
   }
 }
 
-void GetClusterCoordinates(HCluster clusterIdx, PetscScalar* coordinates, 
+void GetClusterCoordinates(int clusterIdx, PetscScalar* coordinates, 
                            AppCtx* context, double& x, double& y)
 {
-  HClusterWrapper cw = (*context->hd)[clusterIdx];
-  if (cw.IsTerminals())
+  if (IsMovableCell(clusterIdx))
   {
-    HCell terminal = context->ci->terminalCells[cw.id()];
+    int clusterIdxInCoordinatesArray = (context->clusterIdx2solutionIdxLUT)[clusterIdx];
+    CRITICAL_ASSERT(clusterIdxInCoordinatesArray != -1);
+    x = coordinates[2*clusterIdxInCoordinatesArray+0];
+    y = coordinates[2*clusterIdxInCoordinatesArray+1];
+  }
+  else if (IsTerminal(clusterIdx))
+  {
+    HCell terminal = context->ci->terminalCells[clusterIdx - SHIFT_NUMBER_FOR_TERMINALS];
     x = context->hd->GetDouble<HCell::X>(terminal);
     y = context->hd->GetDouble<HCell::Y>(terminal);
   }
   else
-  if (cw.IsPrimary())
   {
-    HPin pin = context->ci->primaryPins[cw.id()];
+    HPin pin = context->ci->primaryPins[clusterIdx - SHIFT_NUMBER_FOR_PRIMARY_PINS];
     x = context->hd->GetDouble<HPin::X>(pin);
     y = context->hd->GetDouble<HPin::Y>(pin);
   }
-  else
-  {
-      int clusterIdxInCoordinatesArray = cw.clusterIdx2solutionIdxLUT();
-      CRITICAL_ASSERT(clusterIdxInCoordinatesArray != -1);
-      x = coordinates[2*clusterIdxInCoordinatesArray+0];
-      y = coordinates[2*clusterIdxInCoordinatesArray+1];
-  }
 }
 
-double CalcNetLSE(AppCtx* context, PetscScalar* coordinates, HClusteredNet netIdx)
+double CalcNetLSE(AppCtx* context, PetscScalar* coordinates, int netIdx)
 {
   double sumExp1 = 0.0;
   double sumExp2 = 0.0;
@@ -56,15 +54,13 @@ double CalcNetLSE(AppCtx* context, PetscScalar* coordinates, HClusteredNet netId
   double sumExp4 = 0.0;
 
   int precalcedExponentsIdx;
-  HCluster realClusterIdx;
+  int realClusterIdx;
 
-  //int netSize = context->netListSizes[netIdx];
+  int netSize = context->netListSizes[netIdx];
 
-  HClusteredNetWrapper net = (*context->hd)[netIdx];  
-
-  for (int j = 0; j < net.clusterIdxs()->size(); ++j)
+  for (int j = 0; j < netSize; ++j)
   {
-    realClusterIdx = (*net.clusterIdxs())[j];
+    realClusterIdx = context->ci->netList[netIdx].clusterIdxs[j];
     precalcedExponentsIdx = GetPrecalcedExponentsIdx(context, realClusterIdx);
 
     sumExp1 += context->LSEdata.precalcedExponents[4*precalcedExponentsIdx + 0];
@@ -72,35 +68,35 @@ double CalcNetLSE(AppCtx* context, PetscScalar* coordinates, HClusteredNet netId
     sumExp3 += context->LSEdata.precalcedExponents[4*precalcedExponentsIdx + 2];
     sumExp4 += context->LSEdata.precalcedExponents[4*precalcedExponentsIdx + 3];
   }
-  context->LSEdata.SUM1[::ToID(netIdx) - 1] = sumExp1;
-  context->LSEdata.SUM2[::ToID(netIdx) - 1] = sumExp2;
-  context->LSEdata.SUM3[::ToID(netIdx) - 1] = sumExp3;
-  context->LSEdata.SUM4[::ToID(netIdx) - 1] = sumExp4;
+  context->LSEdata.SUM1[netIdx] = sumExp1;
+  context->LSEdata.SUM2[netIdx] = sumExp2;
+  context->LSEdata.SUM3[netIdx] = sumExp3;
+  context->LSEdata.SUM4[netIdx] = sumExp4;
 
   return context->LSEdata.alpha * log(sumExp1 * sumExp2 * sumExp3 * sumExp4);
 }
 
-double CalcNetLSEGradient(AppCtx* context, HClusteredNet netIdx, int idxInSolutionVector)
+double CalcNetLSEGradient(AppCtx* context, int netIdx, int idxInSolutionVector)
 {
   double sum1 = 0.0;
   double sum2 = 0.0;
 
   if (idxInSolutionVector % 2 == 0)
   {
-    sum1 = context->LSEdata.SUM1[::ToID(netIdx) - 1];
-    sum2 = context->LSEdata.SUM2[::ToID(netIdx) - 1];
+    sum1 = context->LSEdata.SUM1[netIdx];
+    sum2 = context->LSEdata.SUM2[netIdx];
   }
   else
   {
-    sum1 = context->LSEdata.SUM3[::ToID(netIdx) - 1];
-    sum2 = context->LSEdata.SUM4[::ToID(netIdx) - 1];
+    sum1 = context->LSEdata.SUM3[netIdx];
+    sum2 = context->LSEdata.SUM4[netIdx];
   }
 
   //TODO [issue 131]: we need alpha here, but parameters tuning will follow
   return /*context->alpha * */
     (context->LSEdata.precalcedExponents[2*idxInSolutionVector + 0] / sum1 - 
     context->LSEdata.precalcedExponents[2*idxInSolutionVector + 1] / sum2) * 
-    (*context->hd)[netIdx].weight();
+    context->ci->netList[netIdx].weight;
 }
 
 void PerformArgsAssignment(AppCtx* context, PetscScalar* coordinates, double* arguments)
@@ -109,56 +105,38 @@ void PerformArgsAssignment(AppCtx* context, PetscScalar* coordinates, double* ar
   int nClusters    = context->ci->mCurrentNumberOfClusters;
   int nTerminals   = context->ci->terminalCells.size();
   int nPrimaryPins = context->ci->primaryPins.size();
-  HCluster realClusterIdx;
+  int realClusterIdx;
   double x = 0.0;
   double y = 0.0;
   double alpha = context->LSEdata.alpha;
 
-  i = 0;
-  //for (HClusters::ClustersEnumeratorW ue = context->hd->Cluster.GetEnumeratorW(); ue.MoveNext();)
   for (i = 0; i < nClusters; ++i)
   {
-      realClusterIdx = context->solutionIdx2clusterIdxLUT[2 * i];
+    realClusterIdx = context->solutionIdx2clusterIdxLUT[2 * i];
     GetClusterCoordinates(realClusterIdx, coordinates, context, x, y);
     arguments[4*i + 0] = (+x / alpha);
     arguments[4*i + 1] = (-x / alpha);
     arguments[4*i + 2] = (+y / alpha);
-    arguments[4*i + 3] = (-y / alpha);    
+    arguments[4*i + 3] = (-y / alpha);
   }
 
-  i = 0;
-  int j = 0;
-  for (HClusters::ClustersUnrealEnumeratorW ue = context->hd->Cluster.GetUnrealEnumeratorW(); ue.MoveNext();)
-  //for (i = 0; i < nTerminals; ++i)
+  for (i = 0; i < nTerminals; ++i)
   {
-      if (ue.IsTerminals())
-      {
-        GetClusterCoordinates(ue, coordinates, context, x, y);
-        arguments[4*(i + nClusters) + 0] = (+x / alpha);
-        arguments[4*(i + nClusters) + 1] = (-x / alpha);
-        arguments[4*(i + nClusters) + 2] = (+y / alpha);
-        arguments[4*(i + nClusters) + 3] = (-y / alpha);
-        i++;
-      }
-      if (ue.IsPrimary())
-      {
-          GetClusterCoordinates(ue, coordinates, context, x, y);
-          arguments[4*(j + nClusters + nTerminals) + 0] = (+x / alpha);
-          arguments[4*(j + nClusters + nTerminals) + 1] = (-x / alpha);
-          arguments[4*(j + nClusters + nTerminals) + 2] = (+y / alpha);
-          arguments[4*(j + nClusters + nTerminals) + 3] = (-y / alpha);
-          j++;
-      }
+    GetClusterCoordinates(i + SHIFT_NUMBER_FOR_TERMINALS, coordinates, context, x, y);
+    arguments[4*(i + nClusters) + 0] = (+x / alpha);
+    arguments[4*(i + nClusters) + 1] = (-x / alpha);
+    arguments[4*(i + nClusters) + 2] = (+y / alpha);
+    arguments[4*(i + nClusters) + 3] = (-y / alpha);
   }
 
-  /*for (i = 0; i < nPrimaryPins; ++i)
+  for (i = 0; i < nPrimaryPins; ++i)
   {
     GetClusterCoordinates(i + SHIFT_NUMBER_FOR_PRIMARY_PINS, coordinates, context, x, y);
     arguments[4*(i + nClusters + nTerminals) + 0] = (+x / alpha);
     arguments[4*(i + nClusters + nTerminals) + 1] = (-x / alpha);
     arguments[4*(i + nClusters + nTerminals) + 2] = (+y / alpha);
     arguments[4*(i + nClusters + nTerminals) + 3] = (-y / alpha);
-  }*/
+  }
 }
 
 void PrecalcExponents(AppCtx* context, PetscScalar* coordinates)
@@ -190,12 +168,11 @@ double LogSumExp(void* data, PetscScalar* coordinates)
   AppCtx* context = (AppCtx*)data;
 
   double logSumExp = 0.0;
-  int netListSize = static_cast<int>(context->hd->ClustersNetList.ClusteredNetCount());
+  int netListSize = static_cast<int>(context->ci->netList.size());
 
-  for (HClusteredNets::ClusteredNetsEnumeratorW i = context->hd->ClustersNetList.GetEnumeratorW(); i.MoveNext(); )
-  //for (int i = 0; i < netListSize; ++i)
+  for (int i = 0; i < netListSize; ++i)
   {
-    logSumExp += CalcNetLSE(context, coordinates, i) * i.weight();
+    logSumExp += CalcNetLSE(context, coordinates, i) * context->ci->netList[i].weight;
     //ALERT("%d logSumExp =\t%f", i, logSumExp));
   }
 
@@ -207,14 +184,13 @@ void AddLogSumExpGradient(AppCtx* context, int nCoordinates, PetscScalar* coordi
   //#pragma omp parallel for
   for (int idxInSolutionVector = 0; idxInSolutionVector < nCoordinates; idxInSolutionVector++)
   {
-      HCluster clusterIdx = context->solutionIdx2clusterIdxLUT[idxInSolutionVector];
-    int tableSize = static_cast<int>(context->ci->design[clusterIdx].tableOfAdjacentNets()->size());
+    int clusterIdx = context->solutionIdx2clusterIdxLUT[idxInSolutionVector];
+    int tableSize = static_cast<int>(context->ci->tableOfAdjacentNets[clusterIdx].size());
     //consider all adjacent nets
     for (int j = 0; j < tableSize; ++j)
     {
       grad[idxInSolutionVector] += CalcNetLSEGradient(context, 
-        (*context->ci->design[clusterIdx].tableOfAdjacentNets())[j],
-        //context->ci->tableOfAdjacentNets[clusterIdx][j],
+        context->ci->tableOfAdjacentNets[clusterIdx][j],
         idxInSolutionVector);
     }
   }

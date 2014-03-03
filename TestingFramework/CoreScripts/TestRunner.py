@@ -1,32 +1,22 @@
-from Emailer import Emailer
-from SvnWorker import SvnWorker
-from SolutionBuilder import SolutionBuilder
 from ResultsStorage import ResultsStorage
 from ExperimentLauncher import ExperimentLauncher
 from ExperimentsComparator import ExperimentsComparator
 from CoreFunctions import GetTimeStamp, CreateConfigParser
 from Logger import Logger
-from ParametersParsing import TestRunnerParameters, EmailerParameters, RepoParameters, \
-    ReportParameters, GeneralParameters, Tools
+from ParametersParsing import TestRunnerParameters, ReportParameters, GeneralParameters
 
 
 class TestRunner:
-    emailer = None
     cfgParser = CreateConfigParser()
     parameters = None
     experiments = []
     storage = ResultsStorage()
     comparator = ExperimentsComparator(storage)
 
-    def __init__(self, parameters=None, emailer=None):
+    def __init__(self, parameters=None):
         if parameters is None:
             parameters = TestRunnerParameters(self.cfgParser)
 
-        if emailer is None:
-            emailerParameters = EmailerParameters(self.cfgParser)
-            emailer = Emailer(emailerParameters)
-
-        self.emailer = emailer
         self.parameters = parameters
         self.experiments = []
 
@@ -46,23 +36,12 @@ class TestRunner:
         generalParameters = GeneralParameters(self.cfgParser)
         reportParameters = ReportParameters(self.cfgParser)
 
-        if self.parameters.doCheckout:
-            repoParameters = RepoParameters(self.cfgParser)
-            svn = SvnWorker(self.emailer, generalParameters, repoParameters)
-            svn.CheckOut()
-
-        if self.parameters.doBuild:
-            tools = Tools(self.cfgParser)
-            solutionBuilder = SolutionBuilder(self.emailer)
-            solutionBuilder.BuildSln(generalParameters, tools)
-
         for experiment in self.experiments:
             logger.CoolLog("%s: starting %s" % (GetTimeStamp(), experiment.name))
-            launcher = ExperimentLauncher(experiment, self.storage, self.emailer)
+            launcher = ExperimentLauncher(experiment, self.storage)
             launcher.RunExperiment(generalParameters, reportParameters)
 
         self.storage.LogResults()
-        self.storage.SendResults(self.emailer)
 
         self.comparator.CompareExperiments(reportParameters)
         logger.CoolLog("Finish")

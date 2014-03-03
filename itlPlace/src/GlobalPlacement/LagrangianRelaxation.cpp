@@ -1,40 +1,38 @@
 #include "LagrangianRelaxation.h"
 #include "LogSumExp.h"
 
-double GetCi(AppCtx* context, HClusteredNet netIdx, int sinkIdx)
+double GetCi(AppCtx* context, int netIdx, int sinkIdx)
 {
     return context->LRdata.r * context->LRdata.c 
-        * context->LRdata.netLRData[::ToID(netIdx) - 1].netArcMus[sinkIdx-1];
+        * context->LRdata.netLRData[netIdx].netArcMus[sinkIdx-1];
 }
 
-double GetBi(AppCtx* context, HClusteredNet netIdx, int sinkIdx)
+double GetBi(AppCtx* context, int netIdx, int sinkIdx)
 {
     return context->LRdata.r 
-        * context->LRdata.netLRData[::ToID(netIdx) - 1].netArcMus[sinkIdx-1] 
-    * context->LRdata.netLRData[::ToID(netIdx) - 1].sinkLoad[sinkIdx-1];
+        * context->LRdata.netLRData[netIdx].netArcMus[sinkIdx-1] 
+    * context->LRdata.netLRData[netIdx].sinkLoad[sinkIdx-1];
 }
 
-double GetDoi(AppCtx* context, PetscScalar* solution, HClusteredNet netIdx, int sinkIdx)
+double GetDoi(AppCtx* context, PetscScalar* solution, int netIdx, int sinkIdx)
 {
     double sourceX = 0.0;
     double sourceY = 0.0;
     double sinkX = 0.0;
     double sinkY = 0.0;
 
-    HCluster realClusterIdx;
-    HClusteredNetWrapper netIdxW = (*context->hd)[netIdx];
-    realClusterIdx = (*netIdxW.clusterIdxs())[0];
+    int realClusterIdx;
+    realClusterIdx = context->ci->netList[netIdx].clusterIdxs[0];
     GetClusterCoordinates(realClusterIdx, solution, context, sourceX, sourceY);
-    realClusterIdx = (*netIdxW.clusterIdxs())[sinkIdx];
+    realClusterIdx = context->ci->netList[netIdx].clusterIdxs[sinkIdx];
     GetClusterCoordinates(realClusterIdx, solution, context, sinkX, sinkY);
 
     return fabs(sourceX - sinkX) + fabs(sourceY - sinkY);
 }
 
-double GetPartnerCoordinate(AppCtx* context, PetscScalar* solution, bool isX, HClusteredNet netIdx, int pinIdx)
+double GetPartnerCoordinate(AppCtx* context, PetscScalar* solution, bool isX, int netIdx, int pinIdx)
 {
-    HClusteredNetWrapper netIdxW = (*context->hd)[netIdx];
-    HCluster realClusterIdx = (*netIdxW.clusterIdxs())[pinIdx];
+    int realClusterIdx = context->ci->netList[netIdx].clusterIdxs[pinIdx];
 
     double sourceX, sourceY;
     GetClusterCoordinates(realClusterIdx, solution, context, sourceX, sourceY);
@@ -56,18 +54,17 @@ int GetDoiDerivative(AppCtx* context, PetscScalar* solution,
         return 0;
 }
 
-double GetA(AppCtx* context, HClusteredNet netIdx)
+double GetA(AppCtx* context, int netIdx)
 {
-    return context->LRdata.c * context->LRdata.netLRData[::ToID(netIdx) - 1].sourceAFactor;
+    return context->LRdata.c * context->LRdata.netLRData[netIdx].sourceAFactor;
 }
 
-double GetBraces(AppCtx* context, PetscScalar* solution, HClusteredNet netIdx)
+double GetBraces(AppCtx* context, PetscScalar* solution, int netIdx)
 {
     double A = GetA(context, netIdx);
 
     double secondTerm = 0.0;
-    HClusteredNetWrapper netIdxW = (*context->hd)[netIdx];
-    for (int sinkIdx = 1; sinkIdx < netIdxW.clusterIdxs()->size(); sinkIdx++)
+    for (int sinkIdx = 1; sinkIdx < context->netListSizes[netIdx]; sinkIdx++)
     {
         double Ci = GetCi(context, netIdx, sinkIdx);
         double Doi = GetDoi(context, solution, netIdx, sinkIdx);
@@ -79,11 +76,10 @@ double GetBraces(AppCtx* context, PetscScalar* solution, HClusteredNet netIdx)
     return A + secondTerm;
 }
 
-double GetGreenTerm(AppCtx* context, PetscScalar* solution, HClusteredNet netIdx)
+double GetGreenTerm(AppCtx* context, PetscScalar* solution, int netIdx)
 {
     double termG = 0.0;
-    HClusteredNetWrapper netIdxW = (*context->hd)[netIdx];
-    for (int s = 1; s < netIdxW.clusterIdxs()->size(); s++)
+    for (int s = 1; s < context->netListSizes[netIdx]; s++)
     {
         double Bi = GetBi(context, netIdx, s);
         double Doi = GetDoi(context, solution, netIdx, s);
@@ -94,14 +90,13 @@ double GetGreenTerm(AppCtx* context, PetscScalar* solution, HClusteredNet netIdx
     return termG;
 }
 
-int GetClusterNetPinIdx(AppCtx* context, HClusteredNet netIdx, HCluster clusterIdx)
+int GetClusterNetPinIdx(AppCtx* context, int netIdx, int clusterIdx)
 {
-    HClusteredNetWrapper netIdxW = (*context->hd)[netIdx];
-    int netSize = netIdxW.clusterIdxs()->size();
+    int netSize = context->netListSizes[netIdx];
 
     for (int j = 0; j < netSize; ++j)
     {
-        HCluster realClusterIdx = (*netIdxW.clusterIdxs())[j];
+        int realClusterIdx = context->ci->netList[netIdx].clusterIdxs[j];
         if (clusterIdx == realClusterIdx)
         {
             return j;
@@ -114,9 +109,8 @@ void LR(AppCtx* context, PetscScalar* solution)
 {
     double termTNS = 0.0;
 
-    //int netListSize = static_cast<int>(context->ci->netList.size());
-    //for (int netIdx = 0; netIdx < netListSize; ++netIdx)
-    for (HClusteredNets::ClusteredNetsEnumeratorW netIdx = context->hd->ClustersNetList.GetEnumeratorW(); netIdx.MoveNext(); )
+    int netListSize = static_cast<int>(context->ci->netList.size());
+    for (int netIdx = 0; netIdx < netListSize; ++netIdx)
     {
         double braces = GetBraces(context, solution, netIdx);
         double LSE = CalcNetLSE(context, solution, netIdx);
@@ -128,15 +122,13 @@ void LR(AppCtx* context, PetscScalar* solution)
     context->criteriaValues.lr = termTNS;
 }
 
-void GetNetDerivative(AppCtx* context, HCluster clusterIdx, int j, PetscScalar* solution, int idxInSolutionVector)
+void GetNetDerivative(AppCtx* context, int clusterIdx, int j, PetscScalar* solution, int idxInSolutionVector)
 {
     double term1 = 0.0;
     double term2 = 0.0;
     double term3 = 0.0;
 
-    //int netIdx = context->ci->tableOfAdjacentNets[clusterIdx][j];
-    HClusteredNetWrapper netIdx = (*context->hd)[(*(*context->hd)[clusterIdx].tableOfAdjacentNets())[j]];//(*context->hd)[context->ci->tableOfAdjacentNets[::ToID(clusterIdx) - 1][j]];
-
+    int netIdx = context->ci->tableOfAdjacentNets[clusterIdx][j];
     double braces = GetBraces(context, solution, netIdx);
     double LSE = CalcNetLSE(context, solution, netIdx);
     double gLSE = CalcNetLSEGradient(context, netIdx, idxInSolutionVector);
@@ -159,7 +151,7 @@ void GetNetDerivative(AppCtx* context, HCluster clusterIdx, int j, PetscScalar* 
     }
     else
     {
-        for (int sinkIdx = 1; sinkIdx < netIdx.clusterIdxs()->size(); sinkIdx++)
+        for (int sinkIdx = 1; sinkIdx < context->netListSizes[netIdx]; sinkIdx++)
         {
             double Ci = GetCi(context, netIdx, sinkIdx);
             double Bi = GetBi(context, netIdx, sinkIdx);
@@ -178,8 +170,8 @@ void AddLRGradient(AppCtx* context, int nCoordinates, PetscScalar* solution)
 {
     for (int idxInSolutionVector = 0; idxInSolutionVector < nCoordinates; idxInSolutionVector++)
     {
-        HCluster clusterIdx = context->solutionIdx2clusterIdxLUT[idxInSolutionVector];
-        int tableSize = static_cast<int>(context->ci->design[clusterIdx].tableOfAdjacentNets()->size());
+        int clusterIdx = context->solutionIdx2clusterIdxLUT[idxInSolutionVector];
+        int tableSize = static_cast<int>(context->ci->tableOfAdjacentNets[clusterIdx].size());
         //consider all adjacent nets
         for (int j = 0; j < tableSize; ++j)
         {
